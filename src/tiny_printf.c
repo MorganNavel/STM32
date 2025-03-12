@@ -73,7 +73,7 @@ int itoa(int d, char *buf, int maxSize)
 
     int i = 0;
 
-    while (d > 0 && i < maxSize - 1)
+    while (d > 0 && i < maxSize)
     {
         buf[i++] = '0' + (d % 10);
         d /= 10;
@@ -171,7 +171,6 @@ void send(send_params_t params)
         while (padding--)
             putc(ctx, ' ');
 }
-
 int specifyCTX(const char *format, format_t *f)
 {
     int nbCarParsed = 0;
@@ -223,7 +222,6 @@ void tiny_format(const char *format, void *context, fnPutc_t fnPutc, va_list vli
             case 'd':
                 if (f.minWidth == 0)
                     f.minWidth = 13;
-
                 nb = itoa(va_arg(vlist, int), buf, f.minWidth);
                 break;
             case 'b':
