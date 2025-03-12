@@ -19,6 +19,8 @@ console_ctx_t console_ctx;
 int main(void)
 {
 	ME_Timer esc_timer;
+	ME_Timer interaction_timer;
+	console_ctx.interaction_timer = &interaction_timer;
 	console_ctx.esc_timer = &esc_timer;
 	SD_USART_Init(&USART1_sd, &USART1_ctx, &rx, &tx);
 	ME_Console_Init(&USART1_sd, &console_ctx, c1_console_buff, c1_seq_buff);

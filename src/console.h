@@ -1,3 +1,5 @@
+#ifndef CONSOLE_H
+#define CONSOLE_H
 #include "sd.h"
 #include "sd_uart.h"
 #include "fifo.h"
@@ -6,6 +8,8 @@
 #define CON_ARGV_MAX 8
 #define DEFINE_BUF_CONSOLE(_name) uint8_t _name##_console_buff[CON_MAX_BUFF_SIZE];
 #define DEFINE_ESC_SEQ(_name) uint8_t _name##_seq_buff[10];
+#define C_PRINTF(_format, ...) sd_Printf(ctx->sd, _format, ##__VA_ARGS__)
+
 enum Escape_Char
 {
     START = 2,
@@ -13,7 +17,6 @@ enum Escape_Char
     INSERT = 4,
     END = 6,
     DELETE = 7,
-
     CTRL_LEFT = 16,
     CTRL_RIGHT,
     RIGHT,
@@ -26,6 +29,7 @@ typedef enum
 {
     CON_RC_DONE = 0,
     CON_RC_BAD_ARG,
+    CON_RC_INTERACTIVE,
 } con_cmd_rc_t;
 typedef struct
 {
@@ -40,6 +44,9 @@ typedef struct
     ME_Timer *esc_timer;
     uint8_t argc;
     char *argv[CON_ARGV_MAX];
+    bool is_interactive;
+    ME_Timer *interaction_timer;
+    con_cmd_rc_t (*fnInter)(void *ctx);
 } console_ctx_t;
 typedef struct
 {
@@ -59,3 +66,4 @@ typedef struct
 uint16_t Console_ParseInput(console_ctx_t *ctx, uint8_t c);
 void ME_Console_Init(me_sd_t *sd, console_ctx_t *ctx, uint8_t *pBuf, uint8_t *pSeq);
 void ME_Console_Poll(console_ctx_t *ctx);
+#endif // CONSOLE_H

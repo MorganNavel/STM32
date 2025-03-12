@@ -3,23 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "me_timer.h"
-
-#define C_PRINTF(_format, ...) sd_Printf(ctx->sd, _format, ##__VA_ARGS__)
-
-#define DEFINE_CMDS(_name) const con_cmd_dsc_t _name##_cmds[] = {
-#define CMD(_name, _desc, _usage, _fn) \
-    {                                  \
-        .name = _name,                 \
-        .desc = _desc,                 \
-        .usage = _usage,               \
-        .fnCmd = _fn,                  \
-    },
-#define END_CMDS()             \
-    {                          \
-        NULL, NULL, NULL, NULL \
-    }                          \
-    }                          \
-    ;
+#include "command.h"
+#include "vt100.h"
 #define DEFINE_SEQUENCES(_name) const con_sp_char_t _name##_sequences[] = {
 #define SEQUENCE(_pSeq, _c)       \
     {                             \
@@ -44,56 +29,7 @@ SEQUENCE("\x1B[4~", END)
 SEQUENCE("\x1BOD", CTRL_LEFT)
 SEQUENCE("\x1BOC", CTRL_RIGHT)
 END_SEQUENCES()
-con_cmd_rc_t help(console_ctx_t *ctx);
-con_cmd_rc_t echo(console_ctx_t *ctx);
-DEFINE_CMDS(con)
-CMD("help", "Display general help or help for a specific command", "help [command]", help)
-CMD("echo", "Echo a message", "echo <message>", echo)
-END_CMDS()
-
-con_cmd_rc_t help(console_ctx_t *ctx)
-{
-    if (ctx->argc == 1)
-    {
-        C_PRINTF("Available commands:\n");
-        for (int i = 0; con_cmds[i].name != NULL; i++)
-        {
-            C_PRINTF("%-10s - %s\n", con_cmds[i].name, con_cmds[i].desc);
-        }
-        C_PRINTF("\nUse '%s' for more details.\n", con_cmds[0].usage);
-        return CON_RC_DONE;
-    }
-
-    for (int i = 0; con_cmds[i].name != NULL; i++)
-    {
-        if (strcmp(con_cmds[i].name, ctx->argv[1]) == 0)
-        {
-            C_PRINTF("%s - %s\n", con_cmds[i].name, con_cmds[i].desc);
-            C_PRINTF("- Usage: %s\n", con_cmds[i].usage);
-            return CON_RC_DONE;
-        }
-    }
-
-    C_PRINTF("Error: Unknown command '%s'. Use 'help' to list available commands.\n", ctx->argv[1]);
-    return CON_RC_BAD_ARG;
-}
-
-con_cmd_rc_t echo(console_ctx_t *ctx)
-{
-
-    if (ctx->argc <= 1)
-    {
-        C_PRINTF("Error: Missing argument. Usage: %s\n", con_cmds[1].usage);
-        return CON_RC_BAD_ARG;
-    }
-    for (int i = 1; i < ctx->argc; i++)
-    {
-        C_PRINTF("%s ", ctx->argv[i]);
-    }
-    C_PRINTF("\n");
-
-    return CON_RC_DONE;
-}
+extern const con_cmd_dsc_t con_cmds[];
 void Console_CmdExec(console_ctx_t *ctx)
 {
     char *cmd = ctx->argv[0];
@@ -101,25 +37,19 @@ void Console_CmdExec(console_ctx_t *ctx)
     {
         if (strcmp(con_cmds[i].name, cmd) == 0)
         {
-            con_cmds[i].fnCmd(ctx);
+            con_cmd_rc_t rc = con_cmds[i].fnCmd(ctx);
+            switch (rc)
+            {
+            case CON_RC_INTERACTIVE:
+                ctx->is_interactive = true;
+                break;
+            default:
+                break;
+            }
             return;
         }
     }
 }
-void VT100_Home(console_ctx_t *ctx) { C_PRINTF("\x1B[H"); }
-
-void VT100_Move_CursorToCol(console_ctx_t *ctx, uint8_t cols) { C_PRINTF("\x1B[%dG", cols); }
-
-void VT100_Clear_Line(console_ctx_t *ctx) { C_PRINTF("\x1B[2K"); }
-
-void VT100_Clear_Screen(console_ctx_t *ctx)
-{
-    C_PRINTF("\x1B[H\x1B[2J");
-}
-
-void VT100_Clear_EndLine(console_ctx_t *ctx) { C_PRINTF("\x1B[0K"); }
-void VT100_ShiftCursorLeft(console_ctx_t *ctx, uint8_t nbShift) { C_PRINTF("\x1B[%dD", nbShift); }
-void VT100_ShiftCursorRight(console_ctx_t *ctx, uint8_t nbShift) { C_PRINTF("\x1B[%dC", nbShift); }
 
 void reset_escape(console_ctx_t *ctx)
 {
@@ -248,11 +178,22 @@ void ME_Console_Init(me_sd_t *sd, console_ctx_t *ctx, uint8_t *pBuf, uint8_t *pS
     ctx->is_insert = false;
     ctx->argc = 0;
     ctx->argv[0] = NULL;
+    ctx->is_interactive = false;
+    ctx->fnInter = NULL;
+    ME_timerDisable(ctx->esc_timer);
+    ME_timerDisable(ctx->interaction_timer);
     VT100_Clear_Screen(ctx);
     C_PRINTF("> ");
 }
 void ME_Console_Poll(console_ctx_t *ctx)
 {
+    if (ctx->is_interactive)
+    {
+        if (ctx->fnInter != NULL)
+        {
+            ctx->fnInter(ctx);
+        }
+    }
     uint8_t c;
 
     int r = sd_Read(ctx->sd, &c, 1);
@@ -319,6 +260,8 @@ void ME_Console_Poll(console_ctx_t *ctx)
         break;
     case ESCAPE:
     case CTRL_C:
+        ctx->is_interactive = false;
+        ctx->fnInter = NULL;
         C_PRINTF("\n>");
         ctx->index = 0;
         ctx->current_size = 0;
@@ -332,7 +275,8 @@ void ME_Console_Poll(console_ctx_t *ctx)
         parseCmdArgs(ctx, ctx->buf);
         C_PRINTF("\n");
         Console_CmdExec(ctx);
-        C_PRINTF("> ");
+        if (!ctx->is_interactive)
+            C_PRINTF("> ");
         ctx->index = 0;
         ctx->current_size = 0;
         ctx->buf[0] = '\0';
