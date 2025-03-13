@@ -38,10 +38,8 @@ bool ME_FifoIsFull(ME_Fifo *fifo)
  * @retval boolean
  */
 
-bool ME_FifoCanRead(void *pCtx, int n)
+bool ME_FifoCanRead(ME_Fifo *fifo, int n)
 {
-    ME_Fifo *fifo = (ME_Fifo *)pCtx;
-
     return ME_FifoCount(fifo) >= n;
 }
 
@@ -50,9 +48,8 @@ bool ME_FifoCanRead(void *pCtx, int n)
  * @param ME_Fifo: A circular fifo
  * @retval boolean
  */
-bool ME_FifoCanWrite(void *pCtx, int n)
+bool ME_FifoCanWrite(ME_Fifo *fifo, int n)
 {
-    ME_Fifo *fifo = (ME_Fifo *)pCtx;
 
     return ME_FifoFree(fifo) >= n;
 }
@@ -82,10 +79,8 @@ int ME_FifoFree(ME_Fifo *fifo)
  * @param ME_Fifo: A circular fifo
  * @retval uint8_t
  */
-uint8_t ME_FifoRead(void *pCtx)
+uint8_t ME_FifoRead(ME_Fifo *fifo)
 {
-    ME_Fifo *fifo = (ME_Fifo *)pCtx;
-
     fifo->rd &= fifo->mask;
     uint8_t val = fifo->buf[fifo->rd];
     fifo->rd++;
@@ -98,10 +93,8 @@ uint8_t ME_FifoRead(void *pCtx)
  * @param uint16_t: value to write
  * @retval boolean - true if success else false
  */
-void ME_FifoWrite(void *pCtx, uint8_t val)
+void ME_FifoWrite(ME_Fifo *fifo, uint8_t val)
 {
-    ME_Fifo *fifo = (ME_Fifo *)pCtx;
-
     fifo->wr &= fifo->mask;
     fifo->buf[fifo->wr] = val;
     fifo->wr++;

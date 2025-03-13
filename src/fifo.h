@@ -23,11 +23,11 @@ typedef struct
 bool ME_FifoWait(ME_Fifo *fifo);
 bool ME_FifoIsEmpty(ME_Fifo *fifo);
 bool ME_FifoIsFull(ME_Fifo *fifo);
-bool ME_FifoCanRead(void *pCtx, int n);
-bool ME_FifoCanWrite(void *pCtx, int n);
+bool ME_FifoCanRead(ME_Fifo *fifo, int n);
+bool ME_FifoCanWrite(ME_Fifo *fifo, int n);
 int ME_FifoCount(ME_Fifo *fifo);
 int ME_FifoFree(ME_Fifo *fifo);
-uint8_t ME_FifoRead(void *pCtx);
-void ME_FifoWrite(void *pCtx, uint8_t val);
+uint8_t ME_FifoRead(ME_Fifo *fifo);
+void ME_FifoWrite(ME_Fifo *fifo, uint8_t val);
 
 #endif // __MYFIFO_H
