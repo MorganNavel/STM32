@@ -10,7 +10,7 @@
 #include "sd_uart.h"
 #include "console.h"
 DEFINE_FIFO(rx, 256)
-DEFINE_FIFO(tx, 256)
+DEFINE_FIFO(tx, 512)
 DEFINE_BUF_CONSOLE(c1)
 DEFINE_ESC_SEQ(c1)
 me_sd_t USART1_sd;
@@ -19,8 +19,6 @@ console_ctx_t console_ctx;
 int main(void)
 {
 	ME_Timer esc_timer;
-	ME_Timer interaction_timer;
-	console_ctx.interaction_timer = &interaction_timer;
 	console_ctx.esc_timer = &esc_timer;
 	SD_USART_Init(&USART1_sd, &USART1_ctx, &rx, &tx);
 	ME_Console_Init(&USART1_sd, &console_ctx, c1_console_buff, c1_seq_buff);
