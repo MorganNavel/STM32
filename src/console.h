@@ -6,6 +6,9 @@
 #include "me_timer.h"
 #define CON_MAX_BUFF_SIZE 64
 #define CON_ARGV_MAX 8
+#ifndef CON_CMD_CTX_SIZE
+#define CON_CMD_CTX_SIZE 8
+#endif
 #define DEFINE_BUF_CONSOLE(_name) uint8_t _name##_console_buff[CON_MAX_BUFF_SIZE];
 #define DEFINE_ESC_SEQ(_name) uint8_t _name##_seq_buff[10];
 #define C_PRINTF(_format, ...) sd_Printf(ctx->sd, _format, ##__VA_ARGS__)
@@ -44,8 +47,8 @@ typedef struct
     ME_Timer *esc_timer;
     uint8_t argc;
     char *argv[CON_ARGV_MAX];
+    uint8_t cmd_ctx[CON_CMD_CTX_SIZE];
     bool is_interactive;
-    ME_Timer *interaction_timer;
     con_cmd_rc_t (*fnInter)(void *ctx);
 } console_ctx_t;
 typedef struct

@@ -6,6 +6,14 @@
 #include "tiny_printf.h"
 #include <string.h>
 #include "vt100.h"
+#define UPTIME_DELAY 1000
+#define CMD_CTX_BUF(_type, _varname)               \
+    if (sizeof(_type) > CON_CMD_CTX_SIZE)          \
+    {                                              \
+        C_PRINTF("CON_CMD_CTX_SIZE is too small"); \
+        return CON_RC_BAD_ARG;                     \
+    }                                              \
+    _type *_varname = (_type *)(ctx->cmd_ctx);
 
 DEFINE_CMDS(con)
 CMD("help", "Display general help or help for a specific command", "help [command]", ME_CMD_help)
@@ -13,7 +21,9 @@ CMD("echo", "Echo a message", "echo <message>", ME_CMD_echo)
 CMD("uptime", "Display system uptime", "uptime [-f]", ME_CMD_uptime)
 CMD("reboot", "Reboot the system", "reboot", ME_CMD_reboot)
 CMD("clear", "Clear the screen", "clear", ME_CMD_clear)
+CMD("ping", "Answer pong", "ping", ME_CMD_ping)
 END_CMDS()
+
 #define ERROR_ARG(_cmd, _arg)                                                               \
     for (int i = 0; con_cmds[i].name != NULL; i++)                                          \
     {                                                                                       \
@@ -72,7 +82,7 @@ con_cmd_rc_t ME_CMD_echo(console_ctx_t *ctx)
 
     return CON_RC_DONE;
 }
-char *secToUptime(uint8_t *buf, uint8_t size)
+void secToUptime(uint8_t *buf, uint8_t size)
 {
 
     uint32_t sec = GiveTimeSec();
@@ -82,21 +92,26 @@ char *secToUptime(uint8_t *buf, uint8_t size)
     sec %= 3600;
     uint32_t minutes = sec / 60;
     uint32_t seconds = sec % 60;
-    tiny_sprintf(buf, 64, "%d days %-2d hours %-2d minutes %-2d secondes", days, hours, minutes, seconds);
+    tiny_sprintf(buf, size, "%d days %-2d hours %-2d minutes %-2d secondes", days, hours, minutes, seconds);
 }
 con_cmd_rc_t ME_CMD_uptime(console_ctx_t *ctx)
 {
+    typedef struct
+    {
+        ME_Timer t;
+    } ctx_t;
+
+    CMD_CTX_BUF(ctx_t, ctx_cmd);
+
     uint8_t buf[64];
     if (ctx->is_interactive)
     {
-        if (ME_isTimedOut(ctx->interaction_timer))
+        if (ME_isTimedOut(&ctx_cmd->t))
         {
-
             VT100_Clear_Line(ctx);
             VT100_Move_CursorToCol(ctx, 0);
             secToUptime(buf, 64);
-            C_PRINTF("Uptime: %s", buf);
-            ME_timerInit(ctx->interaction_timer, 1000);
+            goto out_interactive;
         }
         return CON_RC_INTERACTIVE;
     }
@@ -104,9 +119,8 @@ con_cmd_rc_t ME_CMD_uptime(console_ctx_t *ctx)
     {
         ctx->fnInter = ME_CMD_uptime;
         secToUptime(buf, 64);
-        C_PRINTF("Uptime: %s", buf);
-        ME_timerInit(ctx->interaction_timer, 1000);
-        return CON_RC_INTERACTIVE;
+        ME_timerInit(&ctx_cmd->t, UPTIME_DELAY);
+        goto out_interactive;
     }
     if (ctx->argc > 1)
     {
@@ -116,6 +130,10 @@ con_cmd_rc_t ME_CMD_uptime(console_ctx_t *ctx)
     secToUptime(buf, 64);
     C_PRINTF("Uptime: %s\n", buf);
     return CON_RC_DONE;
+out_interactive:
+    ME_timerInit(&ctx_cmd->t, UPTIME_DELAY);
+    C_PRINTF("Uptime: %s", buf);
+    return CON_RC_INTERACTIVE;
 }
 con_cmd_rc_t ME_CMD_reboot(console_ctx_t *ctx)
 {
@@ -131,5 +149,15 @@ con_cmd_rc_t ME_CMD_clear(console_ctx_t *ctx)
     }
     VT100_Clear_Screen(ctx);
     VT100_Home(ctx);
+    return CON_RC_DONE;
+}
+con_cmd_rc_t ME_CMD_ping(console_ctx_t *ctx)
+{
+    if (ctx->argc > 1)
+    {
+        ERROR_ARG("ping", ctx->argv[1]);
+        return CON_RC_BAD_ARG;
+    }
+    C_PRINTF("pong\n");
     return CON_RC_DONE;
 }

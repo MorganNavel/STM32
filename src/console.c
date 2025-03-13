@@ -182,19 +182,14 @@ void ME_Console_Init(me_sd_t *sd, console_ctx_t *ctx, uint8_t *pBuf, uint8_t *pS
     ctx->is_interactive = false;
     ctx->fnInter = NULL;
     ME_timerDisable(ctx->esc_timer);
-    ME_timerDisable(ctx->interaction_timer);
     VT100_Clear_Screen(ctx);
     C_PRINTF("> ");
 }
 void ME_Console_Poll(console_ctx_t *ctx)
 {
-    if (ctx->is_interactive)
-    {
-        if (ctx->fnInter != NULL)
-        {
-            ctx->fnInter(ctx);
-        }
-    }
+    if (ctx->is_interactive && ctx->fnInter != NULL)
+        ctx->fnInter(ctx);
+
     uint8_t c;
 
     int r = sd_Read(ctx->sd, &c, 1);

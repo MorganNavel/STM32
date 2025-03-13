@@ -22,4 +22,6 @@ con_cmd_rc_t ME_CMD_echo(console_ctx_t *ctx);
 con_cmd_rc_t ME_CMD_uptime(console_ctx_t *ctx);
 con_cmd_rc_t ME_CMD_reboot(console_ctx_t *ctx);
 con_cmd_rc_t ME_CMD_clear(console_ctx_t *ctx);
+con_cmd_rc_t ME_CMD_ping(console_ctx_t *ctx);
+
 #endif // __COMMAND_H
