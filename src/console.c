@@ -286,11 +286,14 @@ void ME_Console_Poll(console_ctx_t *ctx)
         if (ctx->index > 0)
         {
             Console_ShiftBuffer(ctx, -1);
-            VT100_ShiftCursorLeft(ctx, 1);
+
             if (ctx->index < ctx->current_size)
                 UpdateConsole(ctx);
             else
+            {
+                VT100_ShiftCursorLeft(ctx, 1);
                 VT100_Clear_EndLine(ctx);
+            }
         }
         break;
     }
