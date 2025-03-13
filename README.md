@@ -1,7 +1,7 @@
 # STM32
 
 ## Overview
-As a software developer, I usually work on applications with a high level of abstraction. However, during my apprenticeship, I had the privilege of developing embedded applications. Since I had no prior experience in this domain and no background in electronics, I had to learn everything from the ground up, and start from the basics. With the help of my colleagues, I managed to implement several functionalities from scratch, including:
+As a software developer, I usually work on applications with a high level of abstraction, althought I had some knowledge by making my own Assembly Interpreter & CLisp Compiler. However, during my apprenticeship, I had the privilege of developing embedded applications. Since I had no prior experience in this domain and no background in electronics, I had to learn everything from the ground up, and start from the basics. With the help of my colleagues, I managed to implement several functionalities from scratch, including:
 
 ### Implemented Features
 - **Software Timer**
