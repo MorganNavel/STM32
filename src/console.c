@@ -5,6 +5,7 @@
 #include "me_timer.h"
 #include "command.h"
 #include "vt100.h"
+#define PROMPT_SIZE 2 // "> "
 #define DEFINE_SEQUENCES(_name) const con_sp_char_t _name##_sequences[] = {
 #define SEQUENCE(_pSeq, _c)       \
     {                             \
@@ -147,9 +148,9 @@ void Console_ShiftBuffer(console_ctx_t *ctx, int nbShift)
 void UpdateConsole(console_ctx_t *ctx)
 {
     VT100_Clear_Line(ctx);
-    VT100_Move_CursorToCol(ctx, 0);
+    C_PRINTF('\r');
     C_PRINTF("> %s", ctx->buf);
-    VT100_Move_CursorToCol(ctx, ctx->index + 3);
+    VT100_Move_CursorToCol(ctx, ctx->index + PROMPT_SIZE + 1);
 }
 
 void Console_CasePrintable(console_ctx_t *ctx, uint8_t c)
@@ -216,6 +217,8 @@ void ME_Console_Poll(console_ctx_t *ctx)
     case '\n':
         break;
     case DELETE:
+        if (ctx->current_size == 0)
+            break;
         if (ctx->index < ctx->current_size)
         {
             memmove(&ctx->buf[ctx->index], &ctx->buf[ctx->index + 1], ctx->current_size - ctx->index);
@@ -229,7 +232,7 @@ void ME_Console_Poll(console_ctx_t *ctx)
             ctx->index++;
         while (ctx->index < ctx->current_size && ctx->buf[ctx->index] != ' ')
             ctx->index++;
-        VT100_Move_CursorToCol(ctx, ctx->index + 3);
+        VT100_Move_CursorToCol(ctx, ctx->index + PROMPT_SIZE + 1);
         break;
     case RIGHT:
         if (ctx->index >= ctx->current_size || ctx->index >= CON_MAX_BUFF_SIZE - 1)
@@ -242,7 +245,7 @@ void ME_Console_Poll(console_ctx_t *ctx)
             ctx->index--;
         while (ctx->index > 0 && ctx->buf[ctx->index - 1] != ' ')
             ctx->index--;
-        VT100_Move_CursorToCol(ctx, ctx->index + 3);
+        VT100_Move_CursorToCol(ctx, ctx->index + PROMPT_SIZE + 1);
         break;
     case LEFT: // Left
         if (ctx->index == 0)
@@ -256,7 +259,7 @@ void ME_Console_Poll(console_ctx_t *ctx)
         break;
     case END:
         ctx->index = ctx->current_size;
-        VT100_Move_CursorToCol(ctx, ctx->current_size + 3);
+        VT100_Move_CursorToCol(ctx, ctx->current_size + PROMPT_SIZE + 1);
         break;
     case ESCAPE:
     case CTRL_C:
