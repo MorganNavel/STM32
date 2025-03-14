@@ -2,7 +2,6 @@
 #define CONSOLE_H
 #include "sd.h"
 #include "sd_uart.h"
-#include "fifo.h"
 #include "me_timer.h"
 #define CON_MAX_BUFF_SIZE 64
 #define CON_ARGV_MAX 8
@@ -24,6 +23,8 @@ enum Escape_Char
     CTRL_RIGHT,
     RIGHT,
     LEFT,
+    UP,
+    DOWN,
     ESCAPE = 27,
     BACKSPACE = 127,
 
@@ -34,6 +35,7 @@ typedef enum
     CON_RC_BAD_ARG,
     CON_RC_INTERACTIVE,
 } con_cmd_rc_t;
+
 typedef struct
 {
     me_sd_t *sd;

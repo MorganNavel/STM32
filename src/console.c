@@ -22,7 +22,8 @@
 DEFINE_SEQUENCES(con)
 SEQUENCE("\x1B[C", RIGHT)
 SEQUENCE("\x1B[D", LEFT)
-SEQUENCE("\x1B[A", CTRL_C)
+SEQUENCE("\x1B[A", UP)
+SEQUENCE("\x1B[B", DOWN)
 SEQUENCE("\x1B[1~", START)
 SEQUENCE("\x1B[2~", INSERT)
 SEQUENCE("\x1B[3~", DELETE)
@@ -31,6 +32,7 @@ SEQUENCE("\x1BOD", CTRL_LEFT)
 SEQUENCE("\x1BOC", CTRL_RIGHT)
 END_SEQUENCES()
 extern const con_cmd_dsc_t con_cmds[];
+
 void Console_CmdExec(console_ctx_t *ctx)
 {
     char *cmd = ctx->argv[0];
@@ -102,10 +104,8 @@ uint16_t Console_ParseInput(console_ctx_t *ctx, uint8_t c)
     {
         if (ME_isTimedOut(ctx->esc_timer) || ctx->index_seq >= sizeof(ctx->pSeq))
             goto reset;
-
         if (c == 0)
             return 0;
-
         ctx->pSeq[ctx->index_seq] = c;
         ctx->index_seq++;
         return manageSequence(ctx);
@@ -148,11 +148,10 @@ void Console_ShiftBuffer(console_ctx_t *ctx, int nbShift)
 void UpdateConsole(console_ctx_t *ctx)
 {
     VT100_Clear_Line(ctx);
-    C_PRINTF('\r');
+    C_PRINTF("\r");
     C_PRINTF("> %s", ctx->buf);
     VT100_Move_CursorToCol(ctx, ctx->index + PROMPT_SIZE + 1);
 }
-
 void Console_CasePrintable(console_ctx_t *ctx, uint8_t c)
 {
     if (ctx->current_size >= CON_MAX_BUFF_SIZE - 1)
