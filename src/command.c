@@ -14,7 +14,12 @@
         return CON_RC_BAD_ARG;                     \
     }                                              \
     _type *_varname = (_type *)(ctx->cmd_ctx);
-
+con_cmd_rc_t ME_CMD_help(console_ctx_t *ctx);
+con_cmd_rc_t ME_CMD_echo(console_ctx_t *ctx);
+con_cmd_rc_t ME_CMD_uptime(console_ctx_t *ctx);
+con_cmd_rc_t ME_CMD_reboot(console_ctx_t *ctx);
+con_cmd_rc_t ME_CMD_clear(console_ctx_t *ctx);
+con_cmd_rc_t ME_CMD_ping(console_ctx_t *ctx);
 DEFINE_CMDS(con)
 CMD("help", "Display general help or help for a specific command", "help [command]", ME_CMD_help)
 CMD("echo", "Echo a message", "echo <message>", ME_CMD_echo)
