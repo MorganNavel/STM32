@@ -31,16 +31,20 @@ SEQUENCE("\x1B[4~", END)
 SEQUENCE("\x1BOD", CTRL_LEFT)
 SEQUENCE("\x1BOC", CTRL_RIGHT)
 END_SEQUENCES()
-extern const con_cmd_dsc_t con_cmds[];
-
+GET_CONSOLE_SECTION()
+static const con_cmd_dsc_t *cmds = &__start_console_cmd_list;
+static const con_cmd_dsc_t *end_cmd = &__stop_console_cmd_list;
 void Console_CmdExec(console_ctx_t *ctx)
 {
-    char *cmd = ctx->argv[0];
-    for (int i = 0; con_cmds[i].name != NULL; i++)
+    char *cmd_arg = ctx->argv[0];
+    int i = 0;
+
+    for (const con_cmd_dsc_t *cmd = cmds; cmd < end_cmd; cmd++)
     {
-        if (strcmp(con_cmds[i].name, cmd) == 0)
+        if (strcmp(cmd->name, cmd_arg) == 0)
         {
-            con_cmd_rc_t rc = con_cmds[i].fnCmd(ctx);
+            ctx->current_cmd = cmd;
+            con_cmd_rc_t rc = cmd->fnCmd(ctx);
             switch (rc)
             {
             case CON_RC_INTERACTIVE:
@@ -179,15 +183,18 @@ void ME_Console_Init(me_sd_t *sd, console_ctx_t *ctx, uint8_t *pBuf, uint8_t *pS
     ctx->argc = 0;
     ctx->argv[0] = NULL;
     ctx->is_interactive = false;
-    ctx->fnInter = NULL;
+    ctx->current_cmd = NULL;
     ME_timerDisable(ctx->esc_timer);
     VT100_Clear_Screen(ctx);
     C_PRINTF("> ");
 }
 void ME_Console_Poll(console_ctx_t *ctx)
 {
-    if (ctx->is_interactive && ctx->fnInter != NULL)
-        ctx->fnInter(ctx);
+    if (ctx->is_interactive && ctx->current_cmd != NULL)
+    {
+        GET_CURRENT_CMD()
+        cmd->fnCmd(ctx);
+    }
 
     uint8_t c;
 
@@ -258,7 +265,6 @@ void ME_Console_Poll(console_ctx_t *ctx)
     case ESCAPE:
     case CTRL_C:
         ctx->is_interactive = false;
-        ctx->fnInter = NULL;
         C_PRINTF("\n>");
         ctx->index = 0;
         ctx->current_size = 0;

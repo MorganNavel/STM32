@@ -14,7 +14,22 @@
         "sd_uart.h": "c",
         "*.tcc": "c",
         "console.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "ranges": "c",
+        "utility": "c",
+        "string.h": "c",
+        "deque": "c",
+        "forward_list": "c",
+        "list": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "io_context": "c",
+        "system_error": "c",
+        "thread": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
 }

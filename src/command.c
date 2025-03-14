@@ -14,69 +14,67 @@
         return CON_RC_BAD_ARG;                     \
     }                                              \
     _type *_varname = (_type *)(ctx->cmd_ctx);
+#define ADD_CONS_CMD(id, name, desc, usage, fn)                     \
+    __attribute__((used, section(".console_cmd_list"), aligned(4))) \
+    const con_cmd_dsc_t __console_cmd_list_##id = {name, desc, usage, fn};
+
 con_cmd_rc_t ME_CMD_help(console_ctx_t *ctx);
 con_cmd_rc_t ME_CMD_echo(console_ctx_t *ctx);
 con_cmd_rc_t ME_CMD_uptime(console_ctx_t *ctx);
 con_cmd_rc_t ME_CMD_reboot(console_ctx_t *ctx);
 con_cmd_rc_t ME_CMD_clear(console_ctx_t *ctx);
 con_cmd_rc_t ME_CMD_ping(console_ctx_t *ctx);
-DEFINE_CMDS(con)
-CMD("help", "Display general help or help for a specific command", "help [command]", ME_CMD_help)
-CMD("echo", "Echo a message", "echo <message>", ME_CMD_echo)
-CMD("uptime", "Display system uptime", "uptime [-f]", ME_CMD_uptime)
-CMD("reboot", "Reboot the system", "reboot", ME_CMD_reboot)
-CMD("clear", "Clear the screen", "clear", ME_CMD_clear)
-CMD("ping", "Answer pong", "ping", ME_CMD_ping)
-END_CMDS()
+ADD_CONS_CMD(cmd_help, "help", "Display help", "help [command]", ME_CMD_help);
+ADD_CONS_CMD(cmd_echo, "echo", "Print arguments", "echo [args]", ME_CMD_echo);
+ADD_CONS_CMD(cmd_uptime, "uptime", "Display uptime", "uptime [-f]", ME_CMD_uptime);
+ADD_CONS_CMD(cmd_reboot, "reboot", "Reboot the system", "reboot", ME_CMD_reboot);
+ADD_CONS_CMD(cmd_clear, "clear", "Clear the screen", "clear", ME_CMD_clear);
+ADD_CONS_CMD(cmd_ping, "ping", "Ping the system", "ping", ME_CMD_ping);
 
-#define ERROR_ARG(_cmd, _arg)                                                               \
-    for (int i = 0; con_cmds[i].name != NULL; i++)                                          \
-    {                                                                                       \
-        if (strcmp(con_cmds[i].name, _cmd) == 0)                                            \
-        {                                                                                   \
-            C_PRINTF("Error: Unknown argument '%s'. Usage: %s\n", _arg, con_cmds[i].usage); \
-        }                                                                                   \
-    }
-#define ERROR_MISSING_ARG(_cmd)                                                  \
-    for (int i = 0; con_cmds[i].name != NULL; i++)                               \
-    {                                                                            \
-        if (strcmp(con_cmds[i].name, _cmd) == 0)                                 \
-        {                                                                        \
-            C_PRINTF("Error: Missing argument. Usage: %s\n", con_cmds[i].usage); \
-        }                                                                        \
-    }
+GET_CONSOLE_SECTION()
+static const con_cmd_dsc_t *cmds = &__start_console_cmd_list;
+static const con_cmd_dsc_t *end_cmd = &__stop_console_cmd_list;
+
+#define ERROR_ARG(_arg) \
+    GET_CURRENT_CMD()   \
+    C_PRINTF("Error: Unknown argument '%s'. Usage: %s\n", _arg, cmd->usage);
+
+#define ERROR_MISSING_ARG() \
+    GET_CURRENT_CMD()       \
+    C_PRINTF("Error: Missing argument. Usage: %s\n", cmd->usage);
 
 con_cmd_rc_t ME_CMD_help(console_ctx_t *ctx)
 {
+
     if (ctx->argc == 1)
     {
+
         C_PRINTF("Available commands:\n");
-        for (int i = 0; con_cmds[i].name != NULL; i++)
+        for (const con_cmd_dsc_t *cmd = cmds; cmd < end_cmd; cmd++)
         {
-            C_PRINTF("%-10s - %s\n", con_cmds[i].name, con_cmds[i].desc);
+            C_PRINTF("%-10s - %s\n", cmd->name, cmd->desc);
         }
-        C_PRINTF("\nUse '%s' for more details.\n", con_cmds[0].usage);
+        GET_CURRENT_CMD();
+        C_PRINTF("\nUse '%s' for more details.\n", cmd->usage);
         return CON_RC_DONE;
     }
 
-    for (int i = 0; con_cmds[i].name != NULL; i++)
+    for (const con_cmd_dsc_t *cmd = cmds; cmd < end_cmd; cmd++)
     {
-        if (strcmp(con_cmds[i].name, ctx->argv[1]) == 0)
+        if (strcmp(cmd->name, ctx->argv[1]) == 0)
         {
-            C_PRINTF("%s - %s\n", con_cmds[i].name, con_cmds[i].desc);
-            C_PRINTF("- Usage: %s\n", con_cmds[i].usage);
+            C_PRINTF("%s - %s\n", cmd->name, cmd->desc);
+            C_PRINTF("- Usage: %s\n", cmd->usage);
             return CON_RC_DONE;
         }
     }
-
-    C_PRINTF("Error: Unknown command '%s'. Use 'help' to list available commands.\n", ctx->argv[1]);
     return CON_RC_BAD_ARG;
 }
 con_cmd_rc_t ME_CMD_echo(console_ctx_t *ctx)
 {
     if (ctx->argc <= 1)
     {
-        ERROR_MISSING_ARG("echo");
+        ERROR_MISSING_ARG();
         return CON_RC_BAD_ARG;
     }
     for (int i = 1; i < ctx->argc; i++)
@@ -122,14 +120,13 @@ con_cmd_rc_t ME_CMD_uptime(console_ctx_t *ctx)
     }
     if (ctx->argc > 1 && strcmp(ctx->argv[1], "-f") == 0)
     {
-        ctx->fnInter = ME_CMD_uptime;
         secToUptime(buf, 64);
         ME_timerInit(&ctx_cmd->t, UPTIME_DELAY);
         goto out_interactive;
     }
     if (ctx->argc > 1)
     {
-        ERROR_ARG("uptime", ctx->argv[1]);
+        ERROR_ARG(ctx->argv[1])
         return CON_RC_BAD_ARG;
     }
     secToUptime(buf, 64);
@@ -149,7 +146,7 @@ con_cmd_rc_t ME_CMD_clear(console_ctx_t *ctx)
 {
     if (ctx->argc > 1)
     {
-        ERROR_ARG("clear", ctx->argv[1]);
+        ERROR_ARG(ctx->argv[1])
         return CON_RC_BAD_ARG;
     }
     VT100_Clear_Screen(ctx);
@@ -160,7 +157,7 @@ con_cmd_rc_t ME_CMD_ping(console_ctx_t *ctx)
 {
     if (ctx->argc > 1)
     {
-        ERROR_ARG("ping", ctx->argv[1]);
+        ERROR_ARG(ctx->argv[1])
         return CON_RC_BAD_ARG;
     }
     C_PRINTF("pong\n");

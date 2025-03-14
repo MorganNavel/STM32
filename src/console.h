@@ -51,7 +51,7 @@ typedef struct
     char *argv[CON_ARGV_MAX];
     uint8_t cmd_ctx[CON_CMD_CTX_SIZE];
     bool is_interactive;
-    con_cmd_rc_t (*fnInter)(void *ctx);
+    void *current_cmd;
 } console_ctx_t;
 typedef struct
 {

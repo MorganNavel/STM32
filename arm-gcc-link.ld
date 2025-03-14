@@ -37,7 +37,9 @@ SECTIONS
 	} > rom 
 	
 	.console_cmd_list : {
+        __start_console_cmd_list = .;
 		KEEP(*(SORT(.console_cmd_list*)));
+        __stop_console_cmd_list = .;
 	} > rom 
 	
 	.cg_elt_list : {

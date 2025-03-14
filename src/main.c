@@ -9,6 +9,8 @@
 #include "usart.h"
 #include "sd_uart.h"
 #include "console.h"
+#include "command.h"
+
 DEFINE_FIFO(rx, 256)
 DEFINE_FIFO(tx, 512)
 DEFINE_BUF_CONSOLE(c1)
