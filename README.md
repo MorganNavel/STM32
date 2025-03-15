@@ -18,7 +18,8 @@ As a software developer, I usually work on applications with a high level of abs
 - **Basic Terminal Interface**
   - Manage Echap Sequences
   - Manage Interaction such typing a text, editing it, moving the cursor using VT100 commands.
-  - Create command, and execute it depending on user input.
+  - Execute commands depending on user input.
+  - Possibility to create new commands without modifying the library source code.
 
 ## What I Learned
 Through this experience, I gained a solid understanding of low-level programming and significantly improved my C programming skills. More specifically, I learned about:
